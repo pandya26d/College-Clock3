@@ -121,67 +121,66 @@
   </div>
 
   <script>
-    const dbRequest = indexedDB.open('CollegeClockDB', 1);
+    const dbRequest = indexedDB.open('CollegeClockDB', 2);
+let db;
 
-    dbRequest.onupgradeneeded = function (event) {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains('profiles')) {
-        const profilesStore = db.createObjectStore('profiles', { keyPath: 'username' });
-        profilesStore.createIndex('email', 'email', { unique: true });
-      }
+dbRequest.onupgradeneeded = function (event) {
+  db = event.target.result;
+  if (!db.objectStoreNames.contains('profiles')) {
+    const profilesStore = db.createObjectStore('profiles', { keyPath: 'username' });
+    profilesStore.createIndex('email', 'email', { unique: true });
+  }
+};
+
+dbRequest.onsuccess = function(event) {
+  db = event.target.result;
+  console.log('Database opened successfully');
+};
+
+dbRequest.onerror = function(event) {
+  console.error('IndexedDB error:', event.target.error);  // Changed from errorCode to error
+  console.error('Error name:', event.target.error.name);
+  console.error('Error message:', event.target.error.message);
+};
+
+document.getElementById('signupForm').addEventListener('submit', function(event) {
+  event.preventDefault();
+
+  if (!db) {
+    console.error('Database not initialized');
+    return;
+  }
+
+  const userData = {
+    email: document.getElementById('email').value,
+    firstName: document.getElementById('firstName').value,
+    lastName: document.getElementById('lastName').value,
+    username: document.getElementById('username').value,
+    password: document.getElementById('password').value
+  };
+
+  try {
+    const transaction = db.transaction('profiles', 'readwrite');
+    const profilesStore = transaction.objectStore('profiles');
+
+    const request = profilesStore.add(userData);
+
+    request.onsuccess = function() {
+      console.log('Profile saved successfully!');
+      const loginTransaction = db.transaction('profiles', 'readwrite');
+      const loginStore = loginTransaction.objectStore('profiles');
+      
+      loginStore.put({ ...userData, loggedIn: true });
+      window.location.href = 'pickingColleges.html';
     };
 
-    dbRequest.onerror = function(event) {
-      console.error('IndexedDB error:', event.target.errorCode);
+    request.onerror = function(event) {
+      console.error('Error saving profile:', event.target.error);
     };
-
-    // Handle form submission
-    document.getElementById('signupForm').addEventListener('submit', function(event) {
-      event.preventDefault(); 
-
-      // Collect user data
-      const email = document.getElementById('email').value;
-      const firstName = document.getElementById('firstName').value;
-      const lastName = document.getElementById('lastName').value;
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-
-      // Save profile in IndexedDB (assuming this works already)
-      const db = dbRequest.result;
-      const transaction = db.transaction('profiles', 'readwrite');
-      const profilesStore = transaction.objectStore('profiles');
-
-      profilesStore.add({ email, firstName, lastName, username, password });
-
-      transaction.oncomplete = function() {
-        console.log('Profile saved successfully!');
-
-        const loginTransaction = db.transaction('profiles', 'readonly');
-        const loginStore = loginTransaction.objectStore('profiles');
-        const getUserRequest = loginStore.get(username);
-
-        getUserRequest.onsuccess = function(event) {
-          const user = event.target.result;
-
-          if (user) {
-            console.log('User logged in:', user);
-
-            const loginStore = db.transaction('profiles', 'readwrite').objectStore('profiles');
-            loginStore.put({ ...user, loggedIn: true });
-
-            window.location.href = 'pickingColleges.html';
-          }
-        };
-        
-        getUserRequest.onerror = function(event) {
-          console.error('Error retrieving user:', event.target.error);
-        };
-      };
-
-      transaction.onerror = function(event) {
-        console.error('Error saving profile:', event.target.error);
-      };
-    });
+  } catch (error) {
+    console.error('Transaction error:', error);
+  }
+});
   </script>
 </body>
 </html>
