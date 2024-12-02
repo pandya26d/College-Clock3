@@ -1,0 +1,187 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up - College Clock</title>
+  <style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Arial', sans-serif;
+        background-color: #f5f5f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    .signup-container {
+        background-color: #ffffff;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 2rem;
+        margin-bottom: 20px;
+        color: #333333;
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Labels and Inputs */
+    label {
+        text-align: left;
+        font-size: 1rem;
+        margin-bottom: 5px;
+        color: #444444;
+    }
+
+    input {
+        padding: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #cccccc;
+        border-radius: 5px;
+        font-size: 1rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    input:focus {
+        outline: none;
+        border-color: #D4A017;
+        box-shadow: 0 0 5px rgba(212, 160, 23, 0.5);
+    }
+
+    /* Button */
+    .btn {
+        background-color: #D4A017;
+        color: #ffffff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+        background-color: #B8860B;
+    }
+
+    /* Login Link */
+    .login-link {
+        margin-top: 20px;
+        font-size: 0.9rem;
+        color: #666666;
+    }
+
+    .login-link a {
+        color: #D4A017;
+        text-decoration: none;
+    }
+
+    .login-link a:hover {
+        text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="signup-container">
+    <h1>Create Your Account</h1>
+    <form id="signupForm">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" placeholder="Enter your email" required>
+      
+      <label for="firstName">First Name</label>
+      <input type="text" id="firstName" name="firstName" placeholder="Enter your first name" required>
+      
+      <label for="lastName">Last Name</label>
+      <input type="text" id="lastName" name="lastName" placeholder="Enter your last name" required>
+      
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" placeholder="Create a username" required>
+      
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" placeholder="Create a password" required>
+      
+      <button type="submit" class="btn">Sign Up</button>
+      
+      <p class="login-link">
+        Already have an account? <a href="loginPage.html">Login here</a>.
+      </p>
+    </form>
+  </div>
+
+  <script>
+    const dbRequest = indexedDB.open('CollegeClockDB', 1);
+
+    dbRequest.onupgradeneeded = function (event) {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('profiles')) {
+        const profilesStore = db.createObjectStore('profiles', { keyPath: 'username' });
+        profilesStore.createIndex('email', 'email', { unique: true });
+      }
+    };
+
+    dbRequest.onerror = function(event) {
+      console.error('IndexedDB error:', event.target.errorCode);
+    };
+
+    // Handle form submission
+    document.getElementById('signupForm').addEventListener('submit', function(event) {
+      event.preventDefault(); 
+
+      // Collect user data
+      const email = document.getElementById('email').value;
+      const firstName = document.getElementById('firstName').value;
+      const lastName = document.getElementById('lastName').value;
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      // Save profile in IndexedDB (assuming this works already)
+      const db = dbRequest.result;
+      const transaction = db.transaction('profiles', 'readwrite');
+      const profilesStore = transaction.objectStore('profiles');
+
+      profilesStore.add({ email, firstName, lastName, username, password });
+
+      transaction.oncomplete = function() {
+        console.log('Profile saved successfully!');
+
+        const loginTransaction = db.transaction('profiles', 'readonly');
+        const loginStore = loginTransaction.objectStore('profiles');
+        const getUserRequest = loginStore.get(username);
+
+        getUserRequest.onsuccess = function(event) {
+          const user = event.target.result;
+
+          if (user) {
+            console.log('User logged in:', user);
+
+            const loginStore = db.transaction('profiles', 'readwrite').objectStore('profiles');
+            loginStore.put({ ...user, loggedIn: true });
+
+            window.location.href = 'pickingColleges.html';
+          }
+        };
+        
+        getUserRequest.onerror = function(event) {
+          console.error('Error retrieving user:', event.target.error);
+        };
+      };
+
+      transaction.onerror = function(event) {
+        console.error('Error saving profile:', event.target.error);
+      };
+    });
+  </script>
+</body>
+</html>

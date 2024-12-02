@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - College Clock</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      background-color: #f5f5f5;
+    }
+
+    /* Main Container */
+    .dashboard-container {
+      max-width: 800px;
+      margin: 50px auto;
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #333333;
+    }
+
+    /* College List */
+    .college-list {
+      list-style-type: none;
+      padding: 0;
+      margin: 20px 0;
+    }
+
+    .college-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 15px;
+      border-bottom: 1px solid #cccccc;
+    }
+
+    .college-list li:last-child {
+      border-bottom: none;
+    }
+
+    .college-name {
+      font-weight: bold;
+    }
+
+    .college-deadline {
+      color: #666666;
+    }
+
+    /* Navigation Link */
+    .nav-link {
+      display: inline-block;
+      margin-top: 20px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #D4A017;
+      text-decoration: none;
+    }
+
+    .nav-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Days Remaining */
+    .days-remaining {
+      color: #D4A017;
+      font-weight: bold;
+    }
+
+    .days-urgent {
+      color: #ff0000;
+    }
+    .logout-button {
+      display: inline-block;
+      margin-left: 20px;
+      padding: 8px 16px;
+      background-color: #D4A017;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .logout-button:hover {
+      background-color: #B8860B;
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <h1>Your Saved Colleges</h1>
+        
+        <ul class="college-list" id="collegeList">
+        </ul>
+    
+        <div class="nav-controls">
+          <a href="pickingColleges.html" class="nav-link">Add more colleges</a>
+          <button onclick="logout()" class="logout-button">Logout</button>
+        </div>
+      </div>
+  <script>
+    async function logout() {
+      try {
+        const currentUser = await getSessionUser();
+        if (!currentUser) {
+          window.location.href = 'loginPage.html';
+          return;
+        }
+
+        const dbRequest = indexedDB.open('CollegeClockDB', 1);
+
+        dbRequest.onsuccess = function(event) {
+          const db = event.target.result;
+          const transaction = db.transaction(['profiles'], 'readwrite');
+          const store = transaction.objectStore('profiles');
+          
+          const getRequest = store.get(currentUser);
+
+          getRequest.onsuccess = function() {
+            const userProfile = getRequest.result;
+            if (userProfile) {
+              userProfile.loggedIn = false;
+              const updateRequest = store.put(userProfile);
+              
+              updateRequest.onsuccess = function() {
+                window.location.href = 'loginPage.html';
+              };
+
+              updateRequest.onerror = function() {
+                console.error('Error updating user profile:', updateRequest.error);
+                alert('Error logging out. Please try again.');
+              };
+            }
+          };
+
+          getRequest.onerror = function() {
+            console.error('Error getting user profile:', getRequest.error);
+            alert('Error logging out. Please try again.');
+          };
+
+          transaction.onerror = function() {
+            console.error('Transaction error:', transaction.error);
+            alert('Error logging out. Please try again.');
+          };
+        };
+
+        dbRequest.onerror = function() {
+          console.error('Error opening database:', dbRequest.error);
+          alert('Error logging out. Please try again.');
+        };
+      } catch (error) {
+        console.error('Error in logout:', error);
+        alert('Error logging out. Please try again.');
+      }
+    }
+
+    // Function to get the session user from IndexedDB
+    function getSessionUser() {
+      return new Promise((resolve, reject) => {
+        const dbRequest = indexedDB.open('CollegeClockDB', 1);
+
+        dbRequest.onerror = function(event) {
+          reject('Error opening database');
+        };
+
+        dbRequest.onsuccess = function(event) {
+          const db = event.target.result;
+          const transaction = db.transaction('profiles', 'readonly');
+          const store = transaction.objectStore('profiles');
+          
+          const request = store.getAll();
+          
+          request.onsuccess = function() {
+            const profiles = request.result;
+            const loggedInUser = profiles.find(profile => profile.loggedIn === true);
+            resolve(loggedInUser ? loggedInUser.username : null);
+          };
+          
+          request.onerror = function() {
+            reject('Error getting user data');
+          };
+        };
+      });
+    }
+
+    function calculateDaysRemaining(deadline) {
+      const today = new Date();
+      const deadlineDate = new Date(deadline);
+      const diffTime = deadlineDate - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays;
+    }
+
+    async function loadSavedColleges() {
+      try {
+        const currentUser = await getSessionUser();
+        if (!currentUser) {
+          alert('No user session found. Please log in again.');
+          window.location.href = 'loginPage.html';
+          return;
+        }
+
+        const dbRequest = indexedDB.open('CollegeClockDB', 1);
+
+        dbRequest.onsuccess = function(event) {
+          const db = event.target.result;
+          const transaction = db.transaction(['profiles'], 'readonly');
+          const store = transaction.objectStore('profiles');
+
+          const getRequest = store.get(currentUser);
+
+          getRequest.onsuccess = function() {
+            const userProfile = getRequest.result;
+
+            if (!userProfile || !userProfile.colleges || userProfile.colleges.length === 0) {
+              document.getElementById('collegeList').innerHTML = '<li>No colleges saved yet.</li>';
+              return;
+            }
+
+            const sortedColleges = [...userProfile.colleges].sort((a, b) => 
+              new Date(a.deadline) - new Date(b.deadline)
+            );
+
+            const collegeList = document.getElementById('collegeList');
+            collegeList.innerHTML = ''; 
+
+            sortedColleges.forEach((college) => {
+              const daysRemaining = calculateDaysRemaining(college.deadline);
+              const listItem = document.createElement('li');
+              listItem.innerHTML = `
+                <span class="college-name">${college.collegeName}</span>
+                <span class="college-deadline">
+                  Deadline: ${new Date(college.deadline).toLocaleDateString()}
+                  <span class="days-remaining ${daysRemaining <= 30 ? 'days-urgent' : ''}">
+                    (${daysRemaining} days remaining)
+                  </span>
+                </span>
+              `;
+              collegeList.appendChild(listItem);
+            });
+          };
+
+          getRequest.onerror = function() {
+            console.error('Error retrieving user profile:', getRequest.error);
+          };
+        };
+
+        dbRequest.onerror = function() {
+          console.error('Error opening IndexedDB:', dbRequest.error);
+        };
+      } catch (error) {
+        console.error('Error in loadSavedColleges:', error);
+        alert('Error loading colleges. Please try again.');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadSavedColleges);
+  </script>
+</body>
+</html>

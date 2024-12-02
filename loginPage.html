@@ -1,0 +1,201 @@
+
+<html>
+<head>
+    <style> 
+        /* Reset the page */
+        body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Arial', sans-serif;
+        background-color: #f5f5f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        }
+
+        /* Main Login Container */
+        .login-container {
+        background-color: #ffffff;
+        padding: 40px;
+        border-radius: 10px;
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+        }
+
+        h1 {
+        font-size: 2rem;
+        margin-bottom: 20px;
+        color: #333333;
+        }
+
+        form {
+        display: flex;
+        flex-direction: column;
+        }
+
+        /* Labels and Inputs */
+        label {
+        text-align: left;
+        font-size: 1rem;
+        margin-bottom: 5px;
+        color: #444444;
+        }
+
+        input {
+        padding: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #cccccc;
+        border-radius: 5px;
+        font-size: 1rem;
+        width: 100%;
+        box-sizing: border-box;
+        }
+
+        input:focus {
+        outline: none;
+        border-color: #D4A017;
+        box-shadow: 0 0 5px rgba(212, 160, 23, 0.5);
+        }
+
+        /* Button */
+        .btn {
+        background-color: #D4A017;
+        color: #ffffff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+        background-color: #B8860B;
+        }
+
+        /* Signup Link */
+        .signup-link {
+        margin-top: 20px;
+        font-size: 0.9rem;
+        color: #666666;
+        }
+
+        .signup-link a {
+        color: #D4A017;
+        text-decoration: none;
+        }
+
+        .signup-link a:hover {
+        text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+  <div class="login-container">
+      <h1>Login to College Clock</h1>
+      <form id="loginForm">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="Enter your username" required>
+        
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+        
+        <button type="submit" class="btn">Login</button>
+        
+        <p class="signup-link">
+          Don't have an account? <a href="signUpPage.html">Sign up here</a>.
+        </p>
+      </form>
+  </div>
+  <script>
+     document.addEventListener('DOMContentLoaded', async function() {
+          try {
+              const dbRequest = indexedDB.open('CollegeClockDB', 1);
+              
+              dbRequest.onerror = function(event) {
+                  console.error('Database error:', event.target.error);
+              };
+              
+              dbRequest.onsuccess = function(event) {
+                  const db = event.target.result;
+                  const transaction = db.transaction('profiles', 'readonly');
+                  const store = transaction.objectStore('profiles');
+                  
+                  const request = store.getAll();
+                  
+                  request.onsuccess = function() {
+                      const profiles = request.result;
+                      const loggedInUser = profiles.find(profile => profile.loggedIn === true);
+                      
+                      if (loggedInUser) {
+                          window.location.href = 'dashboard.html';
+                      }
+                  };
+              };
+          } catch (error) {
+              console.error('Error checking login status:', error);
+          }
+      });
+
+      document.getElementById('loginForm').addEventListener('submit', async function(e) {
+          e.preventDefault();
+          
+          const username = document.getElementById('username').value;
+          const password = document.getElementById('password').value;
+
+          try {
+              const dbRequest = indexedDB.open('CollegeClockDB', 1);
+              
+              dbRequest.onsuccess = function(event) {
+                  const db = event.target.result;
+                  
+                  const resetTransaction = db.transaction('profiles', 'readwrite');
+                  const resetStore = resetTransaction.objectStore('profiles');
+                  const resetRequest = resetStore.getAll();
+                  
+                  resetRequest.onsuccess = function() {
+                      const profiles = resetRequest.result;
+                      
+                      profiles.forEach(profile => {
+                          profile.loggedIn = false;
+                          resetStore.put(profile);
+                      });
+                      
+                      resetTransaction.oncomplete = function() {
+                          // Now handle the current user login
+                          const loginTransaction = db.transaction('profiles', 'readwrite');
+                          const loginStore = loginTransaction.objectStore('profiles');
+                          const getRequest = loginStore.get(username);
+                          
+                          getRequest.onsuccess = function() {
+                              const user = getRequest.result;
+                              
+                              if (user && user.password === password) {
+                                  user.loggedIn = true;
+                                  const putRequest = loginStore.put(user);
+                                  
+                                  putRequest.onsuccess = function() {
+                                      window.location.href = 'dashboard.html';
+                                  };
+                              } else {
+                                  alert('Invalid username or password');
+                              }
+                          };
+                      };
+                  };
+              };
+
+              dbRequest.onerror = function(event) {
+                  console.error('Database error:', event.target.error);
+                  alert('An error occurred while logging in');
+              };
+          } catch (error) {
+              console.error('Login error:', error);
+              alert('An error occurred while logging in');
+          }
+      });
+  </script>
+</body>
+</html>

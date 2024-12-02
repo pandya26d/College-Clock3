@@ -1,0 +1,125 @@
+<html>
+<head>
+    <style> 
+        /* Basic reset for the page */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Main container: Split into left and right */
+        .split-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Left Section for the logo */
+        .left-section {
+            width: 60%;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo img {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Right Section for content */
+        .right-section {
+            width: 40%;
+            background-color: #ffffff;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        /* Header and description text */
+        h1 {
+            font-size: 2rem;
+            color: #333333;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1rem;
+            color: #666666;
+            margin: 10px 0;
+        }
+
+        .info {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #444444;
+        }
+
+        /* Buttons */
+        .buttons {
+            margin: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            text-decoration: none;
+            background-color: #D4A017; /* Mustard Yellow */
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin: 5px;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #B8860B; /* Slightly darker mustard yellow */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .split-container {
+                flex-direction: column;
+            }
+
+            .left-section, .right-section {
+                width: 100%;
+                height: 50%;
+            }
+
+            .right-section {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="split-container">
+        <!-- Left Section: Logo -->
+        <div class="left-section">
+            <div class="logo">
+                <img src="collegeCap.jpg">
+            </div>
+        </div>
+
+        <!-- Right Section: Content -->
+        <div class="right-section">
+            <h1>Welcome to the College Clock!</h1>
+            <p>Your personalized tool for managing college applications and deadlines so you can stay organizes and stress-free on your path to college!</p>
+
+            <div class="buttons">
+                <a href="loginPage.html" class="btn">Login</a>
+                <a href="signUpPage.html" class="btn">Sign Up</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
