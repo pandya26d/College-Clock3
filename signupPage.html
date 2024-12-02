@@ -151,6 +151,10 @@ document.getElementById('signupForm').addEventListener('submit', function(event)
     return;
   }
 
+dbRequest.onerror = function(event) {
+  console.error('Database initialization error:', event.target.error);
+};
+
   const userData = {
     email: document.getElementById('email').value,
     firstName: document.getElementById('firstName').value,
