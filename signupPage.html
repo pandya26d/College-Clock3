@@ -150,21 +150,6 @@ document.getElementById('signupForm').addEventListener('submit', function(event)
     console.error('Database not initialized');
     return;
   }
-    if (!dbInitialized) {
-    console.log('Waiting for database initialization...');
-    await new Promise(resolve => {
-      const checkInit = setInterval(() => {
-        if (dbInitialized) {
-          clearInterval(checkInit);
-          resolve();
-        }
-      }, 100);
-    });
-  }
-
-dbRequest.onerror = function(event) {
-  console.error('Database initialization error:', event.target.error);
-};
 
   const userData = {
     email: document.getElementById('email').value,
