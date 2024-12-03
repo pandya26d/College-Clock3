@@ -112,7 +112,7 @@
   <script>
      document.addEventListener('DOMContentLoaded', async function() {
           try {
-              const dbRequest = indexedDB.open('CollegeClockDB', 1);
+              const dbRequest = indexedDB.open('CollegeClockDB', 2);
               
               dbRequest.onerror = function(event) {
                   console.error('Database error:', event.target.error);
@@ -146,7 +146,7 @@
           const password = document.getElementById('password').value;
 
           try {
-              const dbRequest = indexedDB.open('CollegeClockDB', 1);
+              const dbRequest = indexedDB.open('CollegeClockDB', 2);
               
               dbRequest.onsuccess = function(event) {
                   const db = event.target.result;
